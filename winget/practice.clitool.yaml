@@ -1,0 +1,24 @@
+PackageIdentifier: practice.clitool
+PackageVersion: 1.0.0
+DisplayName: CLITool
+Publisher: practice
+PublisherUrl: https://github.com/yourusername/practice
+PublisherSupportUrl: https://github.com/yourusername/practice/issues
+Author: Harsh Sheth
+License: MIT
+LicenseUrl: https://github.com/yourusername/practice/blob/main/LICENSE
+ShortDescription: A simple practice CLI tool with utility functions
+Description: A lightweight command-line tool built with Java that provides simple utility functions. Users can greet people and reverse strings with ease.
+Homepage: https://github.com/yourusername/practice
+SourceCode: https://github.com/yourusername/practice
+
+Installers:
+  - Architecture: x64
+    InstallerType: portable
+    InstallerUrl: https://github.com/yourusername/practice/releases/download/v1.0.0/clitool-1.0.0.zip
+    InstallerSha256: PLACEHOLDER_SHA256_HASH
+    Commands:
+      - clitool
+    ReleaseDate: 2026-02-26
+
+ManifestVersion: 1.4.0

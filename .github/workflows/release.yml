@@ -27,7 +27,8 @@ jobs:
         run: |
           $tag = "v${{ steps.version.outputs.current }}"
           git fetch --tags
-          if (git rev-parse $tag 2>$null) {
+          $tagExists = git rev-parse $tag 2>&1
+          if ($LASTEXITCODE -eq 0) {
             echo "exists=true" >> $env:GITHUB_OUTPUT
             echo "Tag $tag already exists"
           } else {

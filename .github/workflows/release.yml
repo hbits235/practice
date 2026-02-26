@@ -1,0 +1,104 @@
+name: Build and Release
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Get current version from pom.xml
+        id: version
+        run: |
+          [xml]$pom = Get-Content clitool\pom.xml
+          $version = $pom.project.version
+          echo "current=$version" >> $env:GITHUB_OUTPUT
+          echo "Current version: $version"
+
+      - name: Check if tag exists
+        id: tag_exists
+        run: |
+          $tag = "v${{ steps.version.outputs.current }}"
+          git fetch --tags
+          if (git rev-parse $tag 2>$null) {
+            echo "exists=true" >> $env:GITHUB_OUTPUT
+            echo "Tag $tag already exists"
+          } else {
+            echo "exists=false" >> $env:GITHUB_OUTPUT
+            echo "Tag $tag does not exist"
+          }
+
+      - name: Set up Java
+        if: steps.tag_exists.outputs.exists == 'false'
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+
+      - name: Build with Maven
+        if: steps.tag_exists.outputs.exists == 'false'
+        run: |
+          cd clitool
+          mvn clean package
+
+      - name: Create release package
+        if: steps.tag_exists.outputs.exists == 'false'
+        run: |
+          mkdir release-package
+          copy clitool\target\clitool.jar release-package\
+          copy clitool\bin\clitool.bat release-package\
+          Compress-Archive -Path release-package -DestinationPath clitool-v${{ steps.version.outputs.current }}.zip
+
+      - name: Calculate SHA256
+        if: steps.tag_exists.outputs.exists == 'false'
+        id: hash
+        run: |
+          $hash = (certutil -hashfile clitool-v${{ steps.version.outputs.current }}.zip SHA256 | Select-Object -Index 1).Trim()
+          echo "sha256=$hash" >> $env:GITHUB_OUTPUT
+          echo "SHA256: $hash"
+
+      - name: Update YAML manifest
+        if: steps.tag_exists.outputs.exists == 'false'
+        run: |
+          $yaml = Get-Content winget\practice.clitool.yaml -Raw
+          $version = "${{ steps.version.outputs.current }}"
+          $url = "https://github.com/${{ github.repository }}/releases/download/v$version/clitool-v$version.zip"
+          
+          $yaml = $yaml -replace 'PackageVersion: .*', "PackageVersion: $version"
+          $yaml = $yaml -replace 'InstallerUrl: .*', "InstallerUrl: $url"
+          $yaml = $yaml -replace 'InstallerSha256: .*', "InstallerSha256: ${{ steps.hash.outputs.sha256 }}"
+          
+          Set-Content winget\practice.clitool.yaml $yaml
+
+      - name: Create tag
+        if: steps.tag_exists.outputs.exists == 'false'
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git tag v${{ steps.version.outputs.current }}
+          git push origin v${{ steps.version.outputs.current }}
+
+      - name: Commit updated manifest
+        if: steps.tag_exists.outputs.exists == 'false'
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add winget\practice.clitool.yaml
+          git commit -m "chore: update manifest for v${{ steps.version.outputs.current }}"
+          git push
+
+      - name: Create GitHub Release
+        if: steps.tag_exists.outputs.exists == 'false'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.version.outputs.current }}
+          files: clitool-v${{ steps.version.outputs.current }}.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

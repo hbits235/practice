@@ -7,7 +7,7 @@
 
     <groupId>com.practice</groupId>
     <artifactId>clitool</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
     <packaging>jar</packaging>
 
     <name>CLI Tool</name>

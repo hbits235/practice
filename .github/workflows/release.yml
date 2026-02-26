@@ -58,14 +58,6 @@ jobs:
           
           Set-Content winget\practice.clitool.yaml $yaml
 
-      - name: Commit and push updated manifest
-        run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git add winget\practice.clitool.yaml
-          git commit -m "chore: update manifest for v${{ steps.version.outputs.current }}" || echo "No manifest changes"
-          git push || echo "Nothing new to push"
-
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:

@@ -59,8 +59,7 @@ jobs:
           Set-Content winget\practice.clitool.yaml $yaml
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
-        with:
-          files: clitool-v${{ steps.version.outputs.current }}.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create ${{ github.ref_name }} clitool-v${{ steps.version.outputs.current }}.zip --generate-notes

@@ -39,27 +39,8 @@ jobs:
           copy clitool\bin\clitool.bat release-package\
           Compress-Archive -Path release-package -DestinationPath clitool-v${{ steps.version.outputs.current }}.zip
 
-      - name: Calculate SHA256
-        id: hash
-        run: |
-          $hash = (certutil -hashfile clitool-v${{ steps.version.outputs.current }}.zip SHA256 | Select-Object -Index 1).Trim()
-          echo "sha256=$hash" >> $env:GITHUB_OUTPUT
-          echo "SHA256: $hash"
-
-      - name: Update YAML manifest
-        run: |
-          $yaml = Get-Content winget\practice.clitool.yaml -Raw
-          $version = "${{ steps.version.outputs.current }}"
-          $url = "https://github.com/${{ github.repository }}/releases/download/v$version/clitool-v$version.zip"
-          
-          $yaml = $yaml -replace 'PackageVersion: .*', "PackageVersion: $version"
-          $yaml = $yaml -replace 'InstallerUrl: .*', "InstallerUrl: $url"
-          $yaml = $yaml -replace 'InstallerSha256: .*', "InstallerSha256: ${{ steps.hash.outputs.sha256 }}"
-          
-          Set-Content winget\practice.clitool.yaml $yaml
-
       - name: Create GitHub Release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release create ${{ github.ref_name }} clitool-v${{ steps.version.outputs.current }}.zip --generate-notes
+        uses: softprops/action-gh-release@v1
+        with:
+          files: clitool-v${{ steps.version.outputs.current }}.zip
+          token: ${{ secrets.GITHUB_TOKEN }}
